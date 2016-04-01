@@ -5,21 +5,22 @@ Silver Moon (m00n.silv3r@gmail.com)
 #include<stdio.h>
 #include <iostream>
 #include<winsock2.h>
+#include<ws2ipdef.h>
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-#define SERVER "192.168.10.4"  //ip address of udp server
-#define BUFLEN 512  //Max length of buffer
-#define PORT 8888   //The port on which to listen for incoming data
 
-int main(void)
-{
-	struct sockaddr_in si_other;
-	int s, slen = sizeof(si_other);
-	char buf[BUFLEN];
-	char * message;
-	WSADATA wsa;
+#define BUFLEN 512  // Max length of buffer
+#define MULTICAST_GROUP "224.198.87.101"  // Multicast gropu to send the data to
+#define MASTER_PORT 8887   //The port on which to send the data to the server
 
+struct sockaddr_in si_other;
+int s, slen = sizeof(si_other);
+char buf[BUFLEN];
+char * message;
+WSADATA wsa;
+
+int initialize() {
 	//Initialise winsock
 	printf("\nInitialising Winsock...");
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
@@ -39,8 +40,17 @@ int main(void)
 	//setup address structure
 	memset((char *)&si_other, 0, sizeof(si_other));
 	si_other.sin_family = AF_INET;
-	si_other.sin_port = htons(PORT);
-	si_other.sin_addr.S_un.S_addr = inet_addr(SERVER);
+	si_other.sin_port = htons(MASTER_PORT);
+	si_other.sin_addr.S_un.S_addr = inet_addr(MULTICAST_GROUP);
+
+	return 0;
+}
+
+int main(void)
+{
+	
+	initialize();
+	
 
 	//start communication
 	while (1)
