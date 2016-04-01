@@ -10,8 +10,9 @@ Silver Moon ( m00n.silv3r@gmail.com )
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-#define BUFLEN 512  //Max length of buffer
-#define PORT 8888   //The port on which to listen for incoming data
+#define BUFLEN 512  // Max length of buffer
+#define MULTICAST_GROUP "224.198.87.101" // Multicast gropu to receive the data from
+#define CLIENT_PORT 8888   //The port on which to listen for incoming data
 
 SOCKET s;
 struct sockaddr_in server, si_other;
@@ -20,38 +21,38 @@ char buf[BUFLEN];
 WSADATA wsa;
 
 int initialize() {
-	//Initialise winsock
-	printf("\nInitialising Winsock...");
+	// Initialise winsock
+	std::cout << "Initialising Winsock..." << std::endl;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
-		printf("Failed. Error Code : %d", WSAGetLastError());
+		std::cout << "Failed. Error Code : " << WSAGetLastError() << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	printf("WSA initialised.\n");
+	std::cout << "WSA initialised." << std::endl;
 
-	//Create a socket
+	// Create a socket
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
 	{
-		printf("Could not create socket : %d", WSAGetLastError());
+		std::cout << "Could not create socket : " << WSAGetLastError() << std::endl;
 	}
-	printf("Socket created.\n");
+	std::cout << "Socket created." << std::endl;
 
-	//Prepare the sockaddr_in structure
+	// Prepare the sockaddr_in structure
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(PORT);
+	server.sin_port = htons(CLIENT_PORT);
 
-	//Bind
+	// Bind
 	if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR)
 	{
-		printf("Bind failed with error code : %d", WSAGetLastError());
+		std::cout << "Bind failed with error code : " << WSAGetLastError() << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	printf("Bind done.\n");
+	std::cout << "Bind done." << std::endl;
 
 	struct ip_mreq mreq;
 	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-	mreq.imr_multiaddr.s_addr = inet_addr("224.198.87.101");
+	mreq.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
 	setsockopt(s, IPPROTO_IP, 12, (const char *)&mreq, sizeof(mreq)); // 12 = IP_ADD_MEMBERSHIP
 	int err = WSAGetLastError();
 
@@ -73,7 +74,7 @@ int main()
 		// Clear the buffer
 		memset(buf, '\0', BUFLEN);
 
-		// Receive data
+		// Receive data from server
 		if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == SOCKET_ERROR)
 		{
 			std::cout << "recvfrom() failed with error code : " << WSAGetLastError() << std::endl;
