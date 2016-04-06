@@ -3,6 +3,7 @@
 #include <iostream>
 #include<winsock2.h>
 #include<ws2ipdef.h>
+#include <Windows.h>
 
 #include "SceneSharingMaster.h"
 
@@ -15,6 +16,8 @@ int slen = sizeof(si_other);
 char buf[BUFLEN];
 char * message;
 
+int x = 100;
+int y = 100;
 
 int SceneSharingMaster_initialize() {
 	//Initialise winsock
@@ -46,7 +49,22 @@ int SceneSharingMaster_initialize() {
 void SceneSharingMaster_send_loop() {
 	while (1)
 	{
-		message = "300;450";
+		if (GetAsyncKeyState(VK_RIGHT)) {
+			x += 10;
+		}
+		if (GetAsyncKeyState(VK_LEFT)) {
+			x -= 10;
+		}
+		if (GetAsyncKeyState(VK_UP)) {
+			y += 10;
+		}
+		if (GetAsyncKeyState(VK_DOWN)) {
+			y -= 10;
+		}
+
+		memset(buf, '\0', BUFLEN);
+		sprintf(buf, "%d;%d", x, y);
+		message = buf;
 
 		//send the message
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr *) &si_other, slen) == SOCKET_ERROR)
@@ -54,6 +72,7 @@ void SceneSharingMaster_send_loop() {
 			std::cout << "sendto() failed with error code : " << WSAGetLastError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
+		Sleep(100);
 	}
 }
 
