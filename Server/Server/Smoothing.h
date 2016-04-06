@@ -31,4 +31,6 @@ public:
 	int * getWeightedCoordinates();
 
 	int * getBsplineCoordinates();
+
+	int setMode(std::string mode);
 };

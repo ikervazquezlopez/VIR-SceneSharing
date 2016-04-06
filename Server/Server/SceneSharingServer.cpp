@@ -2,6 +2,7 @@
 #include <iostream>
 #include<winsock2.h>
 #include <ws2ipdef.h>
+#include <Windows.h>
 
 #include "SceneSharingServer.h"
 #include "Smoothing.h"
@@ -97,9 +98,18 @@ char * SceneSharingServer_getMessage(int * coords) {
 
 
 void SceneSharingServer_server_loop() {
-	Smoothing smooth = Smoothing("averaged", 15);
+	Smoothing smooth = Smoothing("averaged", 30);
 	while (1)
 	{
+		if(GetAsyncKeyState(0x41)){ //A key
+			smooth.setMode("averaged");
+		}
+		if (GetAsyncKeyState(0x57)) { //W key
+			smooth.setMode("weighted");
+		}
+		if (GetAsyncKeyState(0x42)) { //B key
+			smooth.setMode("bspline");
+		}
 		memset(buf, '\0', BUFLEN);
 
 		int mlen = sizeof(master);

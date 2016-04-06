@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Smoothing.h"
 
 
@@ -5,14 +7,11 @@
 
 Smoothing::Smoothing(std::string mode, int size) {
 
-	if (mode.compare("averaged") == 0)
-		smoothing_mode = AVERAGED;
-	if (mode.compare("weighted") == 0)
-		smoothing_mode = WEIGHTED;
-	if (mode.compare("bsplines") == 0)
-		smoothing_mode = BSPLINES;
+	setMode(mode);
 
 	list_size = size;
+	for (int i = 0; i < list_size; i++)
+		weights.push_back(i+1);
 }
 
 Smoothing::~Smoothing() {
@@ -68,24 +67,42 @@ int * Smoothing::getAverageCoordinates() {
 
 int * Smoothing::getWeightedCoordinates() {
 	int * weighted_average = new int[2];
-
+	int S = (list_size * (weights.front() + weights.back())) / 2;
 	weighted_average[0] = 0;
 	weighted_average[1] = 0;
 
+	float tmp = 0;
 	for (std::list<int>::iterator elem = list_x.begin(), w = weights.begin(); elem != list_x.end(); elem++, w++) {
-		weighted_average[0] += *elem * (*w);
+		tmp += *elem * ((float) (*w) / (float) S);
 	}
-	for (std::list<int>::iterator elem = list_y.begin(), w = weights.begin(); elem != list_y.end(); elem++, w++) {
-		weighted_average[1] += *elem * (*w);
-	}
+	weighted_average[0] = static_cast<int> (tmp);
 
-	weighted_average[0] = weighted_average[0] / list_size;
-	weighted_average[1] = weighted_average[1] / list_size;
+	tmp = 0;
+	for (std::list<int>::iterator elem = list_y.begin(), w = weights.begin(); elem != list_y.end(); elem++, w++) {
+		tmp += *elem * ((float)(*w) / (float) S);
+	}
+	weighted_average[1] = static_cast<int> (tmp);
+	//weighted_average[0] = weighted_average[0] / list_size;
+	//weighted_average[1] = weighted_average[1] / list_size;
 
 	return weighted_average;
 }
 
 
 int * Smoothing::getBsplineCoordinates() {
+	return 0;
+}
+
+
+int Smoothing::setMode(std::string mode) {
+
+	if (mode.compare("averaged") == 0)
+		smoothing_mode = AVERAGED;
+	if (mode.compare("weighted") == 0)
+		smoothing_mode = WEIGHTED;
+	if (mode.compare("bsplines") == 0)
+		smoothing_mode = BSPLINES;
+
+	std::cout << "Mode changed to " << mode << std::endl;
 	return 0;
 }
