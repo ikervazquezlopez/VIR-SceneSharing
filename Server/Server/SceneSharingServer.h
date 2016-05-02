@@ -15,7 +15,7 @@
 
 int SceneSharingServer_initialize();
 
-char * SceneSharingServer_getMessage(int * coords);
+char * SceneSharingServer_getMessage(double * coords);
 
 void SceneSharingServer_server_loop();
 

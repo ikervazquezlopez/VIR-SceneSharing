@@ -4,6 +4,9 @@
 #include <ws2ipdef.h>
 #include <Windows.h>
 
+#include <time.h>
+#include <fstream>
+
 #include "SceneSharingServer.h"
 #include "Smoothing.h"
 
@@ -78,7 +81,7 @@ int SceneSharingServer_initialize() {
 
 
 
-char * SceneSharingServer_getMessage(int * coords) {
+char * SceneSharingServer_getMessage(double * coords) {
 	char buff[BUFLEN];
 	char message[BUFLEN];
 
@@ -87,7 +90,7 @@ char * SceneSharingServer_getMessage(int * coords) {
 	strcpy(message, buff);
 
 	memset(buff, '\0', BUFLEN);
-	sprintf(buff, "%d", coords[1]);
+	sprintf(buff, "%lf", coords[1]);
 
 	strcat(message, ";");
 	strcat(message, buff);
@@ -98,7 +101,8 @@ char * SceneSharingServer_getMessage(int * coords) {
 
 
 void SceneSharingServer_server_loop() {
-	Smoothing smooth = Smoothing("averaged", 30);
+	Smoothing smooth = Smoothing("averaged", 20);
+
 	while (1)
 	{
 		if(GetAsyncKeyState(0x41)){ //A key
@@ -123,8 +127,10 @@ void SceneSharingServer_server_loop() {
 		char * x = strtok(buf, ";");
 		char * y = strtok(NULL, ";");
 
-		int * coords = smooth.getNewCoordinates(atoi(x), atoi(y));
+		
 
+		double * coords = smooth.getNewCoordinates(atoi(x), atoi(y));
+		std::cout << coords[0] << "|" << coords[1] << std::endl;
 		message = SceneSharingServer_getMessage(coords);
 
 		// Send the message
@@ -134,6 +140,38 @@ void SceneSharingServer_server_loop() {
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	/* Write the coordinates into file */
+	std::fstream fs;
+	/*
+	fs.open("MasterCoordinates.txt", std::fstream::out | std::fstream::trunc);
+	for (int i = 0; i < smooth.oriCoords.size(); i++) {
+		fs << smooth.oriCoords.at(i) << ";";
+	}
+	fs.close();
+	*/ 
+
+	fs.open("AverageCoordinates_x.txt", std::fstream::out | std::fstream::trunc);
+	for (int i = 0; i < smooth.aveCoords.size(); i++) {
+		fs << smooth.aveCoords.at(i)[0] << ";";
+	}
+	fs.close();
+	fs.open("AverageCoordinates_y.txt", std::fstream::out | std::fstream::trunc);
+	for (int i = 0; i < smooth.aveCoords.size(); i++) {
+		fs << smooth.aveCoords.at(i)[1] << ";";
+	}
+	fs.close();
+
+	fs.open("WeightCoordinates_x.txt", std::fstream::out | std::fstream::trunc);
+	for (int i = 0; i < smooth.weiCoords.size(); i++) {
+		fs << smooth.weiCoords.at(i)[0] << ";";
+	}
+	fs.close();
+	fs.open("WeightCoordinates_y.txt", std::fstream::out | std::fstream::trunc);
+	for (int i = 0; i < smooth.weiCoords.size(); i++) {
+		fs << smooth.weiCoords.at(i)[1] << ";";
+	}
+	fs.close();
 }
 
 

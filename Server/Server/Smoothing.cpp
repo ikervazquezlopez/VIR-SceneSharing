@@ -12,6 +12,10 @@ Smoothing::Smoothing(std::string mode, int size) {
 	list_size = size;
 	for (int i = 0; i < list_size; i++)
 		weights.push_back(i+1);
+
+	//oriCoords = std::vector<int *>();
+	aveCoords = std::vector<double *>();
+	weiCoords = std::vector<double *>();
 }
 
 Smoothing::~Smoothing() {
@@ -29,8 +33,14 @@ int Smoothing::addNewElement(int elem_x, int elem_y) {
 }
 
 
-int * Smoothing::getNewCoordinates(int  elem_x, int elem_y) {
+double * Smoothing::getNewCoordinates(int  elem_x, int elem_y) {
 	addNewElement(elem_x, elem_y);
+
+	double * cave = getAverageCoordinates();
+	double * cwei = getWeightedCoordinates();
+	oriCoords.push_back(elem_x);
+	aveCoords.push_back(cave);
+	weiCoords.push_back(cwei);
 
 	switch (smoothing_mode) {
 	case AVERAGED:
@@ -45,8 +55,8 @@ int * Smoothing::getNewCoordinates(int  elem_x, int elem_y) {
 
 
 
-int * Smoothing::getAverageCoordinates() {
-	int * average = new int[2];
+double * Smoothing::getAverageCoordinates() {
+	double * average = new double[2];
 
 	average[0] = 0;
 	average[1] = 0;
@@ -65,23 +75,23 @@ int * Smoothing::getAverageCoordinates() {
 }
 
 
-int * Smoothing::getWeightedCoordinates() {
-	int * weighted_average = new int[2];
+double * Smoothing::getWeightedCoordinates() {
+	double * weighted_average = new double[2];
 	int S = (list_size * (weights.front() + weights.back())) / 2;
 	weighted_average[0] = 0;
 	weighted_average[1] = 0;
 
-	float tmp = 0;
+	double tmp = 0;
 	for (std::list<int>::iterator elem = list_x.begin(), w = weights.begin(); elem != list_x.end(); elem++, w++) {
 		tmp += *elem * ((float) (*w) / (float) S);
 	}
-	weighted_average[0] = static_cast<int> (tmp);
+	weighted_average[0] = tmp;
 
 	tmp = 0;
 	for (std::list<int>::iterator elem = list_y.begin(), w = weights.begin(); elem != list_y.end(); elem++, w++) {
 		tmp += *elem * ((float)(*w) / (float) S);
 	}
-	weighted_average[1] = static_cast<int> (tmp);
+	weighted_average[1] = tmp;
 	//weighted_average[0] = weighted_average[0] / list_size;
 	//weighted_average[1] = weighted_average[1] / list_size;
 
@@ -89,7 +99,7 @@ int * Smoothing::getWeightedCoordinates() {
 }
 
 
-int * Smoothing::getBsplineCoordinates() {
+double * Smoothing::getBsplineCoordinates() {
 	return 0;
 }
 

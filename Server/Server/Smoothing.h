@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string>
 #include<list>
+#include <vector>
 
 
 #define AVERAGED 1
@@ -18,19 +19,26 @@ private:
 	std::list<int> list_y;
 	std::list<int> weights;
 
+	
+
 public:
+
+	std::vector<int > oriCoords;
+	std::vector<double *> aveCoords;
+	std::vector<double *> weiCoords;
+
 	Smoothing(std::string mode, int size);
 	~Smoothing();
 
 	int addNewElement(int elem_x, int elem_y);
 
-	int * getNewCoordinates(int elem_x, int elem_y);
+	double * getNewCoordinates(int elem_x, int elem_y);
 
-	int * getAverageCoordinates();
+	double * getAverageCoordinates();
 
-	int * getWeightedCoordinates();
+	double * getWeightedCoordinates();
 
-	int * getBsplineCoordinates();
+	double * getBsplineCoordinates();
 
 	int setMode(std::string mode);
 };
