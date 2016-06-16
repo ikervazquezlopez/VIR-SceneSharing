@@ -15,7 +15,12 @@ struct sockaddr_in server, si_other;
 int slen, recv_len;
 char buf[BUFLEN];
 
-int * coords;
+int actual_coordinates[2];
+
+int fov_x = 30;
+int fov_y = 30;
+
+int transition_mode = INSTANT;
 
 
 
@@ -88,13 +93,119 @@ void SceneSharingClient_receive_loop() {
 			exit(EXIT_FAILURE);
 		}
 
+		// Averaged coordinates for the slave
 		int x = atoi(strtok(buf, ";"));
 		int y = atoi(strtok(NULL, ";"));
 
+		// Master's coordinates
+		int m_x = atoi(strtok(NULL, ";"));
+		int m_y = atoi(strtok(NULL, ";"));
+		// Field of view of the master
+		int m_fov_x = atoi(strtok(NULL, ";"));
+		int m_fov_y = atoi(strtok(NULL, ";"));
+
+
+		if (actual_coordinates[0] + fov_x < m_x + m_fov_x || actual_coordinates[0] - fov_x > m_x - m_fov_x ||
+			actual_coordinates[1] + fov_y < m_y + m_fov_y || actual_coordinates[1] - fov_y > m_y - m_fov_y)
+		{
+			switch (transition_mode) {
+			case INSTANT:
+				SceneSharingClient_look_at(m_x, m_y);
+				break;
+			case BEZIER:
+				float control_points_x[] = { actual_coordinates[0], actual_coordinates[0], m_x, m_x };
+				float control_points_y[] = { actual_coordinates[1], actual_coordinates[1], m_y, m_y };
+
+				bezier_transition(control_points_x, control_points_y, m_x, m_y);
+				break;
+			case STEPS:
+				step_trainsition(actual_coordinates[0], actual_coordinates[1], m_x, m_y);
+				break;
+			}
+		}
 		// Set the look at the coordinates received from the server
 		SceneSharingClient_look_at(x, y);
 	}
 }
+
+
+
+float bezier_value(float t, float * control_points) {
+	float s = 1 - t;
+
+	float e0_x = s * s * s * control_points[0];
+	float e1_x = t * s * s * control_points[1];
+	float e2_x = t * t * s * control_points[2];
+	float e3_x = t * t * t * control_points[3];
+	float b_x = e0_x + 3 * e1_x + 3 * e2_x + e3_x;
+
+	return b_x;
+}
+
+void bezier_transition(float * control_points_x, float * control_points_y, float m_x, float m_y) {
+
+	for (float t = 0; t <= 1; t += BEZIER_STEP) {
+		//Get the values of the Bezier curve
+		float B_x = bezier_value(t, control_points_x);
+		float B_y = bezier_value(t, control_points_y);
+
+		float d_x = abs(m_x - B_x);
+		float d_y = abs(m_y - B_y);
+
+		// Check if the new values are close to the master's
+		bool snapped_x = false, snapped_y = false;
+		if (d_x < SNAP_THRESHOLD)
+			snapped_x = true;
+		if (d_y < SNAP_THRESHOLD)
+			snapped_y = true;
+
+		if (snapped_x && snapped_y) {
+			snapped_x = false, snapped_y = false;
+			SceneSharingClient_look_at(m_x, m_y); // Match to the master's coordinates
+			break;
+		}
+		else
+			SceneSharingClient_look_at(B_x, B_y);
+	}
+}
+
+
+
+
+float step_value(int step, float s_coord, float m_coord) {
+	float d = m_coord - s_coord;
+	if (step > STEPS_MAX_STEP)
+		step = STEPS_MAX_STEP;
+	return s_coord + step*(d / STEPS_MAX_STEP);
+}
+
+
+void step_trainsition(float s_x, float s_y, float m_x, float m_y) {
+
+	for (int step = 1; step <= STEPS_MAX_STEP; step++) {
+		float x = step_value(step, s_x, m_x);
+		float y = step_value(step, s_y, m_y);
+
+		bool snapped_x = false, snapped_y = false;
+		if (abs(x - m_x) < SNAP_THRESHOLD)
+			snapped_x = true;
+		if (abs(y - m_y) < SNAP_THRESHOLD)
+			snapped_y = true;
+
+		if (snapped_x && snapped_y) {
+			snapped_x = false, snapped_y = false;
+			SceneSharingClient_look_at(m_x, m_y); // Match to the master's coordinates
+			break;
+		}
+		else
+			SceneSharingClient_look_at(x, y);
+	}
+}
+
+
+
+
+
 
 
 
