@@ -30,15 +30,15 @@
 
 int SceneSharingClient_initialize();
 
-int SceneSharingClient_look_at(int x, int y);
+int SceneSharingClient_look_at(double x, double y);
 
 void SceneSharingClient_receive_loop();
 
 int SceneSharingClient_finish();
 
 
-float bezier_value(float t, float * control_points);
-void bezier_transition(float * control_points_x, float * control_points_y, float m_x, float m_y);
+double bezier_value(double t, double * control_points);
+void bezier_transition(double * control_points_x, double * control_points_y, double m_x, double m_y);
 
 float step_value(int step, float s_coord, float m_coord);
 void step_trainsition(float s_x, float s_y, float m_x, float m_y);

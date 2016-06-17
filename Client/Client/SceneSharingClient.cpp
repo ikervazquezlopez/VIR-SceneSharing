@@ -15,12 +15,12 @@ struct sockaddr_in server, si_other;
 int slen, recv_len;
 char buf[BUFLEN];
 
-int actual_coordinates[2];
+double actual_coordinates[2];
 
-int fov_x = 30;
-int fov_y = 30;
+int fov_x = 100;
+int fov_y = 100;
 
-int transition_mode = INSTANT;
+int transition_mode = BEZIER;
 
 
 
@@ -74,8 +74,10 @@ int SceneSharingClient_initialize() {
 
 
 
-int SceneSharingClient_look_at(int x, int y) {
+int SceneSharingClient_look_at(double x, double y) {
 	std::cout << "(" << x << "," << y << ")" << std::endl;
+	actual_coordinates[0] = x;
+	actual_coordinates[1] = y;
 	return 0;
 }
 
@@ -98,24 +100,25 @@ void SceneSharingClient_receive_loop() {
 		int y = atoi(strtok(NULL, ";"));
 
 		// Master's coordinates
-		int m_x = atoi(strtok(NULL, ";"));
-		int m_y = atoi(strtok(NULL, ";"));
+		double m_x = atoi(strtok(NULL, ";"));
+		double m_y = atoi(strtok(NULL, ";"));
 		// Field of view of the master
-		int m_fov_x = atoi(strtok(NULL, ";"));
-		int m_fov_y = atoi(strtok(NULL, ";"));
+		double m_fov_x = atoi(strtok(NULL, ";"));
+		double m_fov_y = atoi(strtok(NULL, ";"));
 
+		double control_points_x[] = { actual_coordinates[0], actual_coordinates[0], m_x, m_x };
+		double control_points_y[] = { actual_coordinates[1], actual_coordinates[1], m_y, m_y };
 
+		std::cout << "(" << actual_coordinates[0] << "," << actual_coordinates[1] << "|" << fov_x << "," << fov_y << ") :: (" << m_x << "," << m_y << "|" << m_fov_x << "," << m_fov_y << ")" << std::endl;
 		if (actual_coordinates[0] + fov_x < m_x + m_fov_x || actual_coordinates[0] - fov_x > m_x - m_fov_x ||
 			actual_coordinates[1] + fov_y < m_y + m_fov_y || actual_coordinates[1] - fov_y > m_y - m_fov_y)
 		{
 			switch (transition_mode) {
 			case INSTANT:
+				std::cout << "IN" << std::endl;
 				SceneSharingClient_look_at(m_x, m_y);
 				break;
 			case BEZIER:
-				float control_points_x[] = { actual_coordinates[0], actual_coordinates[0], m_x, m_x };
-				float control_points_y[] = { actual_coordinates[1], actual_coordinates[1], m_y, m_y };
-
 				bezier_transition(control_points_x, control_points_y, m_x, m_y);
 				break;
 			case STEPS:
@@ -124,33 +127,33 @@ void SceneSharingClient_receive_loop() {
 			}
 		}
 		// Set the look at the coordinates received from the server
-		SceneSharingClient_look_at(x, y);
+		//SceneSharingClient_look_at(x, y);
 	}
 }
 
 
 
-float bezier_value(float t, float * control_points) {
-	float s = 1 - t;
+double bezier_value(double t, double * control_points) {
+	double s = 1 - t;
 
-	float e0_x = s * s * s * control_points[0];
-	float e1_x = t * s * s * control_points[1];
-	float e2_x = t * t * s * control_points[2];
-	float e3_x = t * t * t * control_points[3];
-	float b_x = e0_x + 3 * e1_x + 3 * e2_x + e3_x;
+	double e0_x = s * s * s * control_points[0];
+	double e1_x = t * s * s * control_points[1];
+	double e2_x = t * t * s * control_points[2];
+	double e3_x = t * t * t * control_points[3];
+	double b_x = e0_x + 3 * e1_x + 3 * e2_x + e3_x;
 
 	return b_x;
 }
 
-void bezier_transition(float * control_points_x, float * control_points_y, float m_x, float m_y) {
+void bezier_transition(double * control_points_x, double * control_points_y, double m_x, double m_y) {
 
 	for (float t = 0; t <= 1; t += BEZIER_STEP) {
 		//Get the values of the Bezier curve
-		float B_x = bezier_value(t, control_points_x);
-		float B_y = bezier_value(t, control_points_y);
+		double B_x = bezier_value(t, control_points_x);
+		double B_y = bezier_value(t, control_points_y);
 
-		float d_x = abs(m_x - B_x);
-		float d_y = abs(m_y - B_y);
+		double d_x = abs(m_x - B_x);
+		double d_y = abs(m_y - B_y);
 
 		// Check if the new values are close to the master's
 		bool snapped_x = false, snapped_y = false;
@@ -166,6 +169,7 @@ void bezier_transition(float * control_points_x, float * control_points_y, float
 		}
 		else
 			SceneSharingClient_look_at(B_x, B_y);
+		Sleep(100);
 	}
 }
 
@@ -199,6 +203,7 @@ void step_trainsition(float s_x, float s_y, float m_x, float m_y) {
 		}
 		else
 			SceneSharingClient_look_at(x, y);
+		Sleep(100);
 	}
 }
 
