@@ -8,6 +8,8 @@
 
 int SceneSharingMaster_initialize();
 
+char * SceneSharingMaster_getMessage(double m_x, double m_y, double fov_x, double fov_y);
+
 void SceneSharingMaster_send_loop();
 
 int SceneSharingMaster_finish();
