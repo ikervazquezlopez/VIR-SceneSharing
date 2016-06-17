@@ -81,19 +81,43 @@ int SceneSharingServer_initialize() {
 
 
 
-char * SceneSharingServer_getMessage(double * coords) {
+char * SceneSharingServer_getMessage(double * coords, double m_x, double m_y, double fov_x, double fov_y) {
 	char buff[BUFLEN];
 	char message[BUFLEN];
 
+	//Averaged coordinates
 	memset(buff, '\0', BUFLEN);
-	sprintf(buff, "%d", coords[0]);
+	sprintf(buff, "%lf", coords[0]);
 	strcpy(message, buff);
 
 	memset(buff, '\0', BUFLEN);
 	sprintf(buff, "%lf", coords[1]);
-
 	strcat(message, ";");
 	strcat(message, buff);
+
+	//Master coordinates
+	memset(buff, '\0', BUFLEN);
+	sprintf(buff, "%lf", m_x);
+	strcat(message, ";");
+	strcat(message, buff);
+
+	memset(buff, '\0', BUFLEN);
+	sprintf(buff, "%lf", m_y);
+	strcat(message, ";");
+	strcat(message, buff);
+
+	//Master FOV
+	memset(buff, '\0', BUFLEN);
+	sprintf(buff, "%lf", fov_x);
+	strcat(message, ";");
+	strcat(message, buff);
+
+	memset(buff, '\0', BUFLEN);
+	sprintf(buff, "%lf", fov_y);
+	strcat(message, ";");
+	strcat(message, buff);
+
+	std::cout << message << std::endl;
 
 	return message;
 }
@@ -124,14 +148,17 @@ void SceneSharingServer_server_loop() {
 			exit(EXIT_FAILURE);
 		}
 
-		char * x = strtok(buf, ";");
-		char * y = strtok(NULL, ";");
+		char * m_x = strtok(buf, ";");
+		char * m_y = strtok(NULL, ";");
+
+		char * fov_x = strtok(NULL, ";");
+		char * fov_y = strtok(NULL, ";");
 
 		
 
-		double * coords = smooth.getNewCoordinates(atoi(x), atoi(y));
-		std::cout << coords[0] << "|" << coords[1] << std::endl;
-		message = SceneSharingServer_getMessage(coords);
+		double * coords = smooth.getNewCoordinates(atoi(m_x), atoi(m_y));
+		//std::cout << m_x << "|" << m_y << " :: " << fov_x << "|" << fov_y << std::endl;
+		message = SceneSharingServer_getMessage(coords, (double) atoi(m_x), (double) atoi(m_y), (double) atoi(fov_x), (double) atoi(fov_y));
 
 		// Send the message
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr *) &si_other, slen) == SOCKET_ERROR)
